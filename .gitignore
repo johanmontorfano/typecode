@@ -1,0 +1,4 @@
+types/
+target/
+.nvim/
+Cargo.lock
