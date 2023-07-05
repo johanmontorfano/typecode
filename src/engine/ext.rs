@@ -1,4 +1,4 @@
-use heck::ToLowerCamelCase;
+use heck::{ToLowerCamelCase, ToSnakeCase};
 
 use crate::utils::file::try_write_bytes_to_file;
 use crate::{debug, warn};
@@ -71,6 +71,10 @@ impl RustGen for TokenSet {
             } 
         }
 
+        if token.parameters.contains(&TokenParameter::Optional) {
+            output_type = format!("Option<{}>", output_type);
+        }
+
         if token.parameters.contains(&TokenParameter::Floated) {
             match token.token_type {
                 TokenType::IntU32 | TokenType::IntI32| TokenType::IntU64 
@@ -95,7 +99,8 @@ impl RustGen for TokenSet {
             output_type = format!("Vec<{}>", output_type);
        }
 
-       return format!("pub {}: {},", token.token_name, output_type)
+       return format!("pub {}: {},", 
+                      token.token_name.to_snake_case(), output_type)
     }
 
     fn produce_rs_build_in_single_file(
@@ -181,6 +186,10 @@ impl GoGen for TokenSet {
     fn build_type_declaration(token: &TokenSet) -> String {
        let mut output_type = format!("{}", <TokenSet as GoGen>::
                                   generate_keyword_from_token_type(token));
+
+       if token.parameters.contains(&TokenParameter::Optional) {
+            output_type = format!("*{}", output_type);
+       }
 
         if token.parameters.contains(&TokenParameter::Floated) {
             match token.token_type {
@@ -314,12 +323,17 @@ impl TSGen for TokenSet {
             } 
         }
 
-       if token.parameters.contains(&TokenParameter::Vector) {
+        if token.parameters.contains(&TokenParameter::Vector) {
             output_type = format!("{}[]", output_type);
-       } 
+        } 
 
-       return format!("{}: {};", 
-                      token.token_name.to_lower_camel_case(), output_type);
+        if token.parameters.contains(&TokenParameter::Optional) { 
+            format!("{}?: {};", 
+                    token.token_name.to_lower_camel_case(), output_type)
+        } else {
+            format!("{}: {};",
+                    token.token_name.to_lower_camel_case(), output_type)
+        }
     }
     
     fn produce_ts_build_in_single_file(

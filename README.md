@@ -12,7 +12,8 @@ programming languages.
 - [X] Interpreting files into a set of tokens.
 - [X] Outputting tokens into other languages.
 - [X] Checking for custom types.
-- [ ] Support for external types, with per-language rules.
+- [ ] Support for optional types.
+- [ ] Support for external types, as aliases, with per-language rules.
 - [ ] Better the documentation.
 
 # Transpiler installation
@@ -82,13 +83,14 @@ This section is about what are the `[type]` and `[options]` field of a struct's.
 
 Multiple options can be used at the same time.
 
-| Option    | Description                                                                        |
-|-----------|------------------------------------------------------------------------------------|
-| `vec`     | Set the given type as being an array.                                              |
-| `pointer` | Set the type as being a pointer, this option may be removed in upcoming releases.  |
-| `ref`     | Set the type as being a reference.                                                 |
-| `floated` | Set the type as being a float. It only works with numbers.                         |
-| `local`   | Does required importations and magic to make a TypeCode type used as entry type.   |
+| Option     | Description                                                                        |
+|------------|------------------------------------------------------------------------------------|
+| `vec`      | Set the given type as being an array.                                              |
+| `pointer`  | Set the type as being a pointer, this option may be removed in upcoming releases.  |
+| `ref`      | Set the type as being a reference.                                                 |
+| `floated`  | Set the type as being a float. It only works with numbers.                         |
+| `local`    | Does required importations and magic to make a TypeCode type used as entry type.   |
+| `optional` | Set the type as optional.
 
 ##### Reusability of defined types
 

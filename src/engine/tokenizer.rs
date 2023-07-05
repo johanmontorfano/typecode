@@ -27,6 +27,7 @@ pub enum TokenParameter {
     Pointer,
     Reference,
     Vector,
+    Optional,
     LocalType
 }
 
@@ -86,6 +87,8 @@ impl TokenSet {
                 rule_set.exec_rule(TokenParameter::Pointer,   "pointer".into());
                 rule_set.exec_rule(TokenParameter::Reference, "ref".into());
                 rule_set.exec_rule(TokenParameter::LocalType, "local".into());
+                rule_set.exec_rule(
+                    TokenParameter::Optional,  "optional".into());
 
                 // If a rule worked, the result is pushed into `
                 // token_parameters`.
