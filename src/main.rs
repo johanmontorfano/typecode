@@ -39,7 +39,9 @@ fn main() {
     
     files.iter().for_each(|f| {
         let string_file = String::from_utf8(f.to_vec()).unwrap().trim()
-            .split("\n").map(|line| line.to_string())
+            .split("\n")
+            .map(|line| line.to_string())
+            .filter(|line| !line.starts_with(":"))
             .collect::<Vec<String>>();
 
         debug!("Processing file: \n{}", string_file.join("\n"));

@@ -47,6 +47,15 @@ It's important to note that every name HAS TO BE WRITTEN in the `UpperCamelCase`
 format to allow the transpiler to easily output names to the targeted language's
 casing rules.
 
+## Declaring a comment
+
+To declare a comment, begin a new line with the `:` character. The whole line
+will be ignored.
+
+### Example
+
+`: This is a comment.`
+
 ## Declaring a module
 
 To declare a module, use the syntax `module UpperCamelCaseName`
