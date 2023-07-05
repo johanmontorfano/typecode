@@ -183,7 +183,23 @@ impl GoGen for TokenSet {
         }.into()
     }
 
-    fn build_type_declaration(token: &TokenSet) -> String {
+    fn build_type_declaration(
+        token: &TokenSet, reusability: &ReusableDeclarations) -> String {
+        // Due to enums not existing as a proper thing, a custom type pointing
+        // to an enum cannot exist. It's thus mapped as a `string`. 
+        if token.parameters.contains(&TokenParameter::LocalType) {
+            // Determines if the custom token type is present inside the enum
+            // flatten reusability list, if it's present it means the custom type
+            // maps to an enum. 
+        
+            let search_output = 
+                reusability.find_declaration_descriptor_with_declaration_name(
+                    token.custom_token_type.clone().unwrap());
+
+            if search_output.is_some() { return "string".into() }
+        }
+
+
        let mut output_type = format!("{}", <TokenSet as GoGen>::
                                   generate_keyword_from_token_type(token));
 
@@ -219,7 +235,9 @@ impl GoGen for TokenSet {
     }
 
     fn produce_go_build_in_single_file(
-            source: Vec<TokenSet>, output_path: String) 
+            source: Vec<TokenSet>,
+            reusability: ReusableDeclarations,
+            output_path: String) 
             -> Result<(), String> {
         // Content is generated line by line and put there before being joined
         // and saved.
@@ -227,7 +245,7 @@ impl GoGen for TokenSet {
 
         warn!("Go: due to language limitations, modules grouping is ignored.");
         warn!("Go: due to language limitations, enums are set to constants.");
-        
+
         for root_item in source {
             // Loops through the Module's childs.
             for secondary_item /* Such as struct or enum. */ in 
@@ -254,14 +272,14 @@ impl GoGen for TokenSet {
                         content_lines.push(format!("    {} {}",
                             inner_item.1.token_name,
                             <TokenSet as GoGen>::build_type_declaration(
-                              inner_item.1)));
+                              inner_item.1, &reusability)));
                     } else {
                         let variable_name = 
                             format!("{}{}{}",
                                 root_item.token_name,
                                 secondary_item.token_name,
                                 <TokenSet as GoGen>::build_type_declaration(
-                                    inner_item.1)
+                                    inner_item.1, &reusability)
                                 );
                         content_lines.push(
                             format!("const {} = \"{}-{}\"",

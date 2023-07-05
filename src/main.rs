@@ -66,7 +66,9 @@ fn main() {
             #[cfg(feature = "go-gen")]
             "go" | "golang" => {
                 <TokenSet as GoGen>::produce_go_build_in_single_file(
-                    hierachized_lines.clone(), output.clone())
+                    hierachized_lines.clone(), 
+                    flatten_reusability,
+                    output.clone())
             },
             #[cfg(feature = "rust-gen")]
             "rs" | "rust" => {

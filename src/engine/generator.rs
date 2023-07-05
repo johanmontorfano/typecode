@@ -20,12 +20,15 @@ pub trait RustGen {
 #[cfg(feature = "go-gen")]
 pub trait GoGen {
     fn produce_go_build_in_single_file(
-        source: Vec<TokenSet>, output_path: String) 
+        source: Vec<TokenSet>, 
+        reusability: ReusableDeclarations,
+        output_path: String) 
         -> Result<(), String>;
     fn generate_keyword_from_token_type(token: &TokenSet) -> String;
     // Builds a type declaration, only works with inner tokens of 
     // structs/enums.
-    fn build_type_declaration(token: &TokenSet) -> String;
+    fn build_type_declaration(
+        token: &TokenSet, reusability: &ReusableDeclarations) -> String;
 }
 
 // Generates TypeScript code from TypeCode Tokens.
