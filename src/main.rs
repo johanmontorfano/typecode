@@ -36,55 +36,55 @@ fn main() {
     // Read all files from the directory.
     let files = try_read_files_from_dir_to_bytes(dir_path)
         .expect("Failed to read files from the provided directory");
-    
-    files.iter().for_each(|f| {
-        let string_file = String::from_utf8(f.to_vec()).unwrap().trim()
-            .split("\n")
-            .map(|line| line.to_string())
-            .filter(|line| !line.starts_with(":"))
-            .collect::<Vec<String>>();
+   
+    let string_file = files.iter()
+        .map(|file| String::from_utf8_lossy(file))
+        .collect::<String>().trim()
+        .split("\n")
+        .map(|line| line.to_string())
+        .filter(|line| !line.starts_with(":"))
+        .collect::<Vec<String>>();
 
-        debug!("Processing file: \n{}", string_file.join("\n"));
+    debug!("File(s) content: {:?}", string_file);
 
-        let parsed_lines = string_file.iter()
-            .map(|line| TokenSet::token_set_from_string(line.clone()))
-            .filter(|item| item.is_some())
-            .map(|filtered| filtered.unwrap())
-            .collect::<Vec<TokenSet>>();
+    let parsed_lines = string_file.iter()
+        .map(|line| TokenSet::token_set_from_string(line.clone()))
+        .filter(|item| item.is_some())
+        .map(|filtered| filtered.unwrap())
+        .collect::<Vec<TokenSet>>();
 
-        let hierachized_lines = TokenSet::apply_hierarchy_rules(parsed_lines);
-        let flatten_reusability = 
-            ReusableDeclarations::from_token_sets_vec(
-                hierachized_lines.clone());
+    let hierachized_lines = TokenSet::apply_hierarchy_rules(parsed_lines);
+    let flatten_reusability = 
+        ReusableDeclarations::from_token_sets_vec(
+            hierachized_lines.clone());
 
-        if let Err(reason) = match lang.to_lowercase().as_str() {
-            #[cfg(feature = "ts-gen")]
-            "ts" | "typescript" => {
-                <TokenSet as TSGen>::produce_ts_build_in_single_file(
-                    hierachized_lines.clone(), 
-                    flatten_reusability,
-                    output.clone())
-            },
-            #[cfg(feature = "go-gen")]
-            "go" | "golang" => {
-                <TokenSet as GoGen>::produce_go_build_in_single_file(
-                    hierachized_lines.clone(), 
-                    flatten_reusability,
-                    output.clone())
-            },
-            #[cfg(feature = "rust-gen")]
-            "rs" | "rust" => {
-                <TokenSet as RustGen>::produce_rs_build_in_single_file(
-                    hierachized_lines.clone(), 
-                    flatten_reusability, 
-                    output.clone())
-            },
-            _ => { panic!("Unknwon generator: {}.", lang.to_uppercase()) }
-        } {
-            println!("Failed to produce output: {}", reason);
-        } else {
-            println!("Successfully produced an output at {}", output.clone());
-        }
-    });
+    if let Err(reason) = match lang.to_lowercase().as_str() {
+        #[cfg(feature = "ts-gen")]
+        "ts" | "typescript" => {
+            <TokenSet as TSGen>::produce_ts_build_in_single_file(
+                hierachized_lines.clone(), 
+                flatten_reusability,
+                output.clone())
+        },
+        #[cfg(feature = "go-gen")]
+        "go" | "golang" => {
+            <TokenSet as GoGen>::produce_go_build_in_single_file(
+                hierachized_lines.clone(), 
+                flatten_reusability,
+                output.clone())
+        },
+        #[cfg(feature = "rust-gen")]
+        "rs" | "rust" => {
+            <TokenSet as RustGen>::produce_rs_build_in_single_file(
+                hierachized_lines.clone(), 
+                flatten_reusability, 
+                output.clone())
+        },
+        _ => { panic!("Unknwon generator: {}.", lang.to_uppercase()) }
+    } {
+        println!("Failed to produce output: {}", reason);
+    } else {
+        println!("Successfully produced an output at {}", output.clone());
+    }
 }
 
