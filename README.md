@@ -11,10 +11,8 @@ programming languages.
 - [X] Reading files.
 - [X] Interpreting files into a set of tokens.
 - [X] Outputting tokens into other languages.
-- [ ] Checking for custom types.
-    - [ ] Checking for custom types.
-    - [ ] Determines if custom types require imports made by the transpiler.
-    - [ ] Check for imports integrity.
+- [X] Checking for custom types.
+- [ ] Support for external types, with per-language rules.
 - [ ] Better the documentation.
 
 # Transpiler installation
@@ -90,6 +88,27 @@ Multiple options can be used at the same time.
 | `pointer` | Set the type as being a pointer, this option may be removed in upcoming releases.  |
 | `ref`     | Set the type as being a reference.                                                 |
 | `floated` | Set the type as being a float. It only works with numbers.                         |
+| `local`   | Does required importations and magic to make a TypeCode type used as entry type.   |
+
+##### Reusability of defined types
+
+TypeCode allows for code reusability through the `local` parameter. When setting
+this parameter to a struct type, such as: 
+```
+mod Module
+struct Example
+    string Text
+
+struct Container
+    Example local Placeholder
+```
+
+The line `Example local Placeholder` tells the transpiler that the entry 
+`Placeholder` is of type `Example` and, through the `local` parameter, that the
+`Example` type is present within the TypeCode codebase.
+
+It means that the transpiler will do proper imports statements depending on the
+targeted programming language to ensure everything works out well.
 
 ## Declaring an enum's constant
 

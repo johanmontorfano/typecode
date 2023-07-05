@@ -26,7 +26,8 @@ pub enum TokenParameter {
     Floated,
     Pointer,
     Reference,
-    Vector
+    Vector,
+    LocalType
 }
 
 #[derive(Debug, Clone)]
@@ -84,6 +85,7 @@ impl TokenSet {
                 rule_set.exec_rule(TokenParameter::Floated,   "floated".into());
                 rule_set.exec_rule(TokenParameter::Pointer,   "pointer".into());
                 rule_set.exec_rule(TokenParameter::Reference, "ref".into());
+                rule_set.exec_rule(TokenParameter::LocalType, "local".into());
 
                 // If a rule worked, the result is pushed into `
                 // token_parameters`.
@@ -147,5 +149,15 @@ impl TokenSet {
         });
         
         return output;
+    }
+
+    // Searches for a child TokenSet which is a struct. This function will
+    // return `None` if it's not ran from a Module instance.
+    pub fn find_struct_in_token_childs(&self, struct_name: String) 
+        -> Option<&TokenSet> {
+         if self.token_type != TokenType::Module { return None }
+
+         self.childs.iter().find_map(|item| if item.token_name == struct_name 
+                                     { Some(item) } else { None })
     }
 }

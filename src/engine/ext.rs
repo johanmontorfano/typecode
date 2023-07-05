@@ -1,11 +1,37 @@
+use heck::ToLowerCamelCase;
+
 use crate::utils::file::try_write_bytes_to_file;
 use crate::{debug, warn};
+use super::reusability::{ItemDeclarationDescriptor, ReusableDeclarations};
 use super::tokenizer::{TokenSet, TokenType, TokenParameter};
-use super::generator::{RustGen, GoGen, TSGen};
 
+
+// ITEM DECLARATION DESCRIPTOR IMPLEMENTATIONS
+#[cfg(feature = "rust-gen")]
+use super::generator::RustReusability;
+#[cfg(feature = "rust-gen")]
+impl RustReusability for ItemDeclarationDescriptor {
+    fn produce_reusable_statement_from_struct_or_enum_token(&self) -> String {
+        return format!("{}::{}", self.module_name, self.declaration_name);
+    }
+}
+
+#[cfg(feature = "ts-gen")]
+use super::generator::TSReusability;
+#[cfg(feature = "ts-gen")]
+impl TSReusability for ItemDeclarationDescriptor {
+    fn produce_reusable_statement_from_struct_or_enum_token(&self) -> String {
+        return format!("{}.{}", self.module_name, self.declaration_name);
+    }
+}
+
+
+// TOKEN SET IMPLEMENTATIONS
+#[cfg(feature = "rust-gen")]
+use super::generator::RustGen;
+#[cfg(feature = "rust-gen")]
 impl RustGen for TokenSet {
-    fn generate_keyword_from_token_type(
-            token: &TokenSet) -> String {
+    fn generate_keyword_from_token_type(token: &TokenSet) -> String {
         match token.token_type {
             TokenType::Char => { "char" }
             TokenType::Bool => { "bool" }
@@ -27,9 +53,23 @@ impl RustGen for TokenSet {
     }
 
     fn build_type_declaration(
-            token: &TokenSet) -> String {
+            token: &TokenSet, reusability: &ReusableDeclarations) -> String {
         let mut output_type = format!("{}", <TokenSet as RustGen>::
                                   generate_keyword_from_token_type(token));
+
+        if token.parameters.contains(&TokenParameter::LocalType) {
+            let reusable_data = reusability.
+                    find_declaration_descriptor_with_declaration_name( 
+                        token.custom_token_type.clone().unwrap());
+
+            debug!("Found a token with the `local` parameter.");
+
+            if reusable_data.is_some() {
+                output_type = <ItemDeclarationDescriptor as RustReusability>
+                    ::produce_reusable_statement_from_struct_or_enum_token(
+                        reusable_data.unwrap());
+            } 
+        }
 
         if token.parameters.contains(&TokenParameter::Floated) {
             match token.token_type {
@@ -59,7 +99,8 @@ impl RustGen for TokenSet {
     }
 
     fn produce_rs_build_in_single_file(
-            source: Vec<TokenSet>, 
+            source: Vec<TokenSet>,
+            reusability: ReusableDeclarations,
             output_path: String) -> Result<(), String> {
         // Content is generated line by line and is put here before being 
         // joined at save time.
@@ -93,9 +134,9 @@ impl RustGen for TokenSet {
                     if secondary_item.token_type == TokenType::Structure {
                         content_lines.push(format!("        {}",
                             <TokenSet as RustGen>::build_type_declaration(
-                                &inner_item)));
+                                &inner_item, &reusability)));
                     } else {
-                        content_lines.push(format!("        {},",
+                        content_lines.push(format!("        pub {},",
                             inner_item.custom_token_type.unwrap()));
                     }
                 }
@@ -112,6 +153,10 @@ impl RustGen for TokenSet {
     }
 }
 
+
+#[cfg(feature = "go-gen")]
+use super::generator::GoGen;
+#[cfg(feature = "go-gen")]
 impl GoGen for TokenSet {
     fn generate_keyword_from_token_type(token: &TokenSet) -> String {
         match token.token_type {
@@ -230,6 +275,10 @@ impl GoGen for TokenSet {
     }
 }
 
+
+#[cfg(feature = "ts-gen")]
+use super::generator::TSGen;
+#[cfg(feature = "ts-gen")]
 impl TSGen for TokenSet {
     fn generate_keyword_from_token_type(token: &TokenSet) -> String {
         match token.token_type {
@@ -246,19 +295,37 @@ impl TSGen for TokenSet {
         }.into()
     }
 
-    fn build_type_declaration(token: &TokenSet) -> String {
+    fn build_type_declaration(
+        token: &TokenSet, reusability: &ReusableDeclarations) -> String {
        let mut output_type = format!("{}", <TokenSet as TSGen>::
                                      generate_keyword_from_token_type(token));
+
+        if token.parameters.contains(&TokenParameter::LocalType) {
+            let reusable_data = reusability.
+                    find_declaration_descriptor_with_declaration_name( 
+                        token.custom_token_type.clone().unwrap());
+
+            debug!("Found a token with the `local` parameter.");
+
+            if reusable_data.is_some() {
+                output_type = <ItemDeclarationDescriptor as TSReusability>
+                    ::produce_reusable_statement_from_struct_or_enum_token(
+                        reusable_data.unwrap());
+            } 
+        }
 
        if token.parameters.contains(&TokenParameter::Vector) {
             output_type = format!("{}[]", output_type);
        } 
 
-       return format!("{}: {};", token.token_name, output_type);
+       return format!("{}: {};", 
+                      token.token_name.to_lower_camel_case(), output_type);
     }
     
     fn produce_ts_build_in_single_file(
-            source: Vec<TokenSet>, output_path: String)
+            source: Vec<TokenSet>, 
+            reusability: ReusableDeclarations,
+            output_path: String)
             -> Result<(), String> {
        // Content is generated line by line and is put here before being joined
        // at save time.
@@ -295,7 +362,7 @@ impl TSGen for TokenSet {
                     if secondary_item.token_type == TokenType::Structure {
                         content_lines.push(format!("        {}",
                             <TokenSet as TSGen>::build_type_declaration(
-                                &inner_item)));
+                                &inner_item, &reusability)));
                     } else {
                         content_lines.push(format!("        {},",
                             inner_item.custom_token_type.unwrap()));

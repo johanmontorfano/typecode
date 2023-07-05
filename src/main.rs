@@ -2,7 +2,7 @@ use utils::clargs;
 use utils::file::try_read_files_from_dir_to_bytes;
 use engine::tokenizer::TokenSet;
 
-use crate::engine::generator::{RustGen, GoGen, TSGen};
+use crate::engine::{generator::{RustGen, GoGen, TSGen}, reusability::ReusableDeclarations};
 
 mod engine;
 mod utils;
@@ -51,19 +51,29 @@ fn main() {
             .collect::<Vec<TokenSet>>();
 
         let hierachized_lines = TokenSet::apply_hierarchy_rules(parsed_lines);
+        let flatten_reusability = 
+            ReusableDeclarations::from_token_sets_vec(
+                hierachized_lines.clone());
 
         if let Err(reason) = match lang.to_lowercase().as_str() {
+            #[cfg(feature = "ts-gen")]
             "ts" | "typescript" => {
                 <TokenSet as TSGen>::produce_ts_build_in_single_file(
-                    hierachized_lines.clone(), output.clone())
+                    hierachized_lines.clone(), 
+                    flatten_reusability,
+                    output.clone())
             },
+            #[cfg(feature = "go-gen")]
             "go" | "golang" => {
                 <TokenSet as GoGen>::produce_go_build_in_single_file(
                     hierachized_lines.clone(), output.clone())
             },
+            #[cfg(feature = "rust-gen")]
             "rs" | "rust" => {
                 <TokenSet as RustGen>::produce_rs_build_in_single_file(
-                    hierachized_lines.clone(), output.clone())
+                    hierachized_lines.clone(), 
+                    flatten_reusability, 
+                    output.clone())
             },
             _ => { panic!("Unknwon generator: {}.", lang.to_uppercase()) }
         } {
