@@ -12,7 +12,7 @@ programming languages.
 - [X] Interpreting files into a set of tokens.
 - [X] Outputting tokens into other languages.
 - [X] Checking for custom types.
-- [ ] Support for optional types.
+- [X] Support for optional types.
 - [ ] Support for external types, as aliases, with per-language rules.
 - [ ] Better the documentation.
 
