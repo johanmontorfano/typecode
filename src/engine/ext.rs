@@ -12,7 +12,8 @@ use super::generator::RustReusability;
 #[cfg(feature = "rust-gen")]
 impl RustReusability for ItemDeclarationDescriptor {
     fn produce_reusable_statement_from_struct_or_enum_token(&self) -> String {
-        return format!("{}::{}", self.module_name, self.declaration_name);
+        return format!("super::{}::{}", 
+                       self.module_name, self.declaration_name);
     }
 }
 
