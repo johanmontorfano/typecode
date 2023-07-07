@@ -68,10 +68,18 @@ fn main() {
         },
         #[cfg(feature = "go-gen")]
         "go" | "golang" => {
+            let (_, go_package_name) = 
+                  clargs::argument_and_param_from_args_string_vec(
+                      &cli_args, "--go-package-name".into())
+                  .expect("Missing `--go-package-name` argument.");
+
+            debug!("Found --go-package-name.");
+
             <TokenSet as GoGen>::produce_go_build_in_single_file(
                 hierachized_lines.clone(), 
                 flatten_reusability,
-                output.clone())
+                output.clone(),
+                go_package_name)
         },
         #[cfg(feature = "rust-gen")]
         "rs" | "rust" => {

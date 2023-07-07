@@ -22,7 +22,8 @@ pub trait GoGen {
     fn produce_go_build_in_single_file(
         source: Vec<TokenSet>, 
         reusability: ReusableDeclarations,
-        output_path: String) 
+        output_path: String,
+        output_package_name: String) 
         -> Result<(), String>;
     fn generate_keyword_from_token_type(token: &TokenSet) -> String;
     // Builds a type declaration, only works with inner tokens of 

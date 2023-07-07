@@ -238,7 +238,8 @@ impl GoGen for TokenSet {
     fn produce_go_build_in_single_file(
             source: Vec<TokenSet>,
             reusability: ReusableDeclarations,
-            output_path: String) 
+            output_path: String,
+            output_package_name: String) 
             -> Result<(), String> {
         // Content is generated line by line and put there before being joined
         // and saved.
@@ -246,6 +247,8 @@ impl GoGen for TokenSet {
 
         warn!("Go: due to language limitations, modules grouping is ignored.");
         warn!("Go: due to language limitations, enums are set to constants.");
+
+        content_lines.push(format!("package {}\n", output_package_name));
 
         for root_item in source {
             // Loops through the Module's childs.

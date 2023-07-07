@@ -173,3 +173,12 @@ are available to transpilation.
 ## TypeCode command example
 
 `typecodet ./common -o ./server/common_types.rs -l rs`
+
+### CLI specifications per generator
+
+#### Go Generator
+
+When transpiling TypeCode to Go, an additionnal parameter has to be provided to
+set a package name to your Go file.
+
+This parameter has to be defined as `--go-package-name [name]`
