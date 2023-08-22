@@ -1,9 +1,11 @@
 use utils::clargs;
-use utils::file::try_read_files_from_dir_to_bytes;
-use engine::tokenizer::TokenSet;
+use crate::{
+    utils::conf_file::{
+        try_detect_conf_file_within_provided_directory, 
+        read_configuration_from_to_config_struct}, 
+    config::CommandLineInstructions};
 
-use crate::engine::{generator::{RustGen, GoGen, TSGen}, reusability::ReusableDeclarations};
-
+mod config;
 mod engine;
 mod utils;
 mod macros;
@@ -21,78 +23,66 @@ fn main() {
 
     // Command-line variables
     let dir_path = cli_args.get(1)
-        .expect("Missing input directory path").clone();
-    let (_, output) = 
-        clargs::argument_and_param_from_args_string_vec(&cli_args, "-o".into())
-        .expect("Missing output file destination: -o [filename]");
-    let (_, lang) = 
-        clargs::argument_and_param_from_args_string_vec(&cli_args, "-l".into())
-        .expect("Missing language output: -l [language]");
+        .expect("Missing input directory path");
 
+    // Buffer that contains every transpilation to do on the current session.
+    // It's only useful with configuration files that requires multiple 
+    // transpilations per session.
+    let mut tpl_instrs: Vec<CommandLineInstructions> = vec![];
 
-    println!("Transpiling typecode from {} into {} using the {} generator.", 
-             dir_path, output, lang.to_uppercase());
+    // If a `tc.conf.file` is found, we'll use the `TranspilerExternalConfig`
+    // struct to handle transpilation requests, otherwise we'll manually parse
+    // it into `CommandLineInstructions`.
+    if try_detect_conf_file_within_provided_directory(dir_path.clone()) {
+        let conf_file_content = read_configuration_from_to_config_struct(
+            dir_path.clone());
+        if conf_file_content.ts.is_some() {
+            tpl_instrs.push(conf_file_content.make_command_line_instruction(
+                    "ts", &dir_path).unwrap()); 
+        }
+        
+        if conf_file_content.rs.is_some() {
+            tpl_instrs.push(conf_file_content.make_command_line_instruction(
+                    "rs", &dir_path).unwrap());
+        }
 
-    // Read all files from the directory.
-    let files = try_read_files_from_dir_to_bytes(dir_path)
-        .expect("Failed to read files from the provided directory");
-   
-    let string_file = files.iter()
-        .map(|file| String::from_utf8_lossy(file))
-        .collect::<String>().trim()
-        .split("\n")
-        .map(|line| line.to_string())
-        .filter(|line| !line.starts_with(":"))
-        .collect::<Vec<String>>();
-
-    debug!("File(s) content: {:?}", string_file);
-
-    let parsed_lines = string_file.iter()
-        .map(|line| TokenSet::token_set_from_string(line.clone()))
-        .filter(|item| item.is_some())
-        .map(|filtered| filtered.unwrap())
-        .collect::<Vec<TokenSet>>();
-
-    let hierachized_lines = TokenSet::apply_hierarchy_rules(parsed_lines);
-    let flatten_reusability = 
-        ReusableDeclarations::from_token_sets_vec(
-            hierachized_lines.clone());
-
-    if let Err(reason) = match lang.to_lowercase().as_str() {
-        #[cfg(feature = "ts-gen")]
-        "ts" | "typescript" => {
-            <TokenSet as TSGen>::produce_ts_build_in_single_file(
-                hierachized_lines.clone(), 
-                flatten_reusability,
-                output.clone())
-        },
-        #[cfg(feature = "go-gen")]
-        "go" | "golang" => {
-            let (_, go_package_name) = 
-                  clargs::argument_and_param_from_args_string_vec(
-                      &cli_args, "--go-package-name".into())
-                  .expect("Missing `--go-package-name` argument.");
-
-            debug!("Found --go-package-name.");
-
-            <TokenSet as GoGen>::produce_go_build_in_single_file(
-                hierachized_lines.clone(), 
-                flatten_reusability,
-                output.clone(),
-                go_package_name)
-        },
-        #[cfg(feature = "rust-gen")]
-        "rs" | "rust" => {
-            <TokenSet as RustGen>::produce_rs_build_in_single_file(
-                hierachized_lines.clone(), 
-                flatten_reusability, 
-                output.clone())
-        },
-        _ => { panic!("Unknwon generator: {}.", lang.to_uppercase()) }
-    } {
-        println!("Failed to produce output: {}", reason);
+        if conf_file_content.go.is_some() {
+            tpl_instrs.push(conf_file_content.make_command_line_instruction(
+                    "go", &dir_path).unwrap());
+        }
+        
     } else {
-        println!("Successfully produced an output at {}", output.clone());
+        let (_, output) = clargs::argument_and_param_from_args_string_vec(
+            &cli_args, "-o".into())
+            .expect("Missing output file destination: -o [filename]");
+        let (_, lang) = clargs::argument_and_param_from_args_string_vec(
+            &cli_args, "-l".into())
+            .expect("Missing language output: ");
+        let mut go_module_name = None;
+
+        if lang == "go".to_string() {
+            go_module_name = Some(
+                clargs::argument_and_param_from_args_string_vec(
+                    &cli_args, 
+                    "--go-package-name".into())
+               .expect("Missing `--go-package-name [name]` argument.")
+               .1); 
+        }
+
+        tpl_instrs.push(CommandLineInstructions { 
+            transpile_to_lang: lang, 
+            transpile_dir_path: dir_path.clone(), 
+            transpile_to_output: format!("{}/{}", dir_path.clone(), output), 
+            go_module_name });
     }
+
+    // Process every transpilation instruction.
+    tpl_instrs.iter().for_each(|tpl| {
+        println!("Processing files from {} with the {} generator, and outputs to {}.",
+                 dir_path, tpl.transpile_to_lang, tpl.transpile_to_output);
+        tpl.transpile();
+    });
+
+
 }
 

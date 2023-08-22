@@ -183,3 +183,38 @@ When transpiling TypeCode to Go, an additionnal parameter has to be provided to
 set a package name to your Go file.
 
 This parameter has to be defined as `--go-package-name [name]`
+
+## Empower the usage of the TypeCode transpiler with it's configuration file.
+
+Because TypeCode is meant to share the same types between mutiple codebases,
+it's normal that you use the `typecodet` transpiler multiple times to output
+your TypeCode types to many other languages... And it can be boring to just
+rewrite the same commands on repeat.
+
+That's why using a configuration file to define output targets and names pattern.
+This file has to be placed in the root of the TypeCode directory and be named 
+`tc.conf.yaml`.
+
+This is what a TypeCode configuration file is:
+
+```yaml
+go:
+    module_name: some_go_module_name
+    output_file: path/to/output/file
+rs:
+    output_file: path/to/output/file
+```
+
+Basically, each of the languages you want to output your types to needs a 
+parameter definition from within this configuration file with the following
+structure (depending on the language's transpiler specificities):
+
+```yaml
+[target_lang]
+    output_file: path/to/output/file
+    [go_module_name as module_name (optional)]: some_go_module_name
+```
+
+With a configuration file, you just have to invoke the `typecodet [dir]` command 
+to point to the directory you want to transpile assets from.
+
