@@ -15,6 +15,7 @@ programming languages.
 - [X] Support for optional types.
 - [ ] Support for external types, as aliases, with per-language rules.
 - [ ] Better the documentation.
+- [ ] Configuration file to specify transpilation target and paths.
 
 # Transpiler installation
 
