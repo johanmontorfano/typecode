@@ -18,7 +18,8 @@ pub fn try_read_file_to_bytes(path: String) -> Result<Vec<u8>, String> {
 pub fn try_read_files_from_dir_to_bytes(path: String) 
     -> Result<Vec<Vec<u8>>, String> {
 
-    debug!("Reading files from directory {}", path);
+    debug!("Reading files from directory {}.", path);
+    debug!("Excluding any file not ending in .tc");
 
     match read_dir(path) {
         Ok(dir_content) => {
@@ -27,7 +28,8 @@ pub fn try_read_files_from_dir_to_bytes(path: String)
                 let file = file.unwrap();
 
                 // if the file is a folder, the entry is not processed.
-                if file.metadata().unwrap().is_file() { 
+                if file.metadata().unwrap().is_file() &&
+                    file.file_name().to_str().unwrap().ends_with(".tc") { 
 
                     debug!("{:?}", file);
 

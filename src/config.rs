@@ -50,7 +50,7 @@ impl CommandLineInstructions {
             .trim()
             .split("\n")
             .filter(|l| !l.starts_with(":"))
-            .map(|l| TokenSet::token_set_from_string(l.clone().to_string()))
+            .map(|e| TokenSet::token_set_from_string(e.clone().to_string()))
             .filter(|i| i.is_some())
             .map(|f| f.unwrap())
             .collect::<Vec<TokenSet>>());

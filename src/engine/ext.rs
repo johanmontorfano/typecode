@@ -100,7 +100,7 @@ impl RustGen for TokenSet {
             output_type = format!("Vec<{}>", output_type);
        }
 
-       return format!("pub {}: {},", 
+       return format!("pub {}: {}", 
                       token.token_name.to_snake_case(), output_type)
     }
 
@@ -132,20 +132,22 @@ impl RustGen for TokenSet {
                     <TokenSet as RustGen>::
                     generate_keyword_from_token_type(&secondary_item),
                     secondary_item.token_name));
-                
-                // Loops through the inner types of the Struct/Enum.
-                for inner_item in secondary_item.childs {
-                    // If the inner item is a child of an enum, only the 
-                    // custom type is used.
+
+                // Loop through the inner types of a struct/enum.
+                secondary_item.childs.iter().enumerate().for_each(|(pos, item)| {
+                    let colon = pos < secondary_item.childs.len();
+
                     if secondary_item.token_type == TokenType::Structure {
-                        content_lines.push(format!("        {}",
+                        content_lines.push(format!("        {}{}",
                             <TokenSet as RustGen>::build_type_declaration(
-                                &inner_item, &reusability)));
+                                item, &reusability),
+                            if colon { "," } else { "" }));
                     } else {
-                        content_lines.push(format!("        pub {},",
-                            inner_item.custom_token_type.unwrap()));
+                        content_lines.push(format!("        {}{}",
+                            item.custom_token_type.as_ref().unwrap(),
+                            if colon { "," } else { "" }));
                     }
-                }
+                });
                 content_lines.push("    }".into());
             }
             content_lines.push("}".into());
